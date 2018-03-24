@@ -3,26 +3,16 @@ extends layout.pug
 block content
   .post.no-rank
     .post-title #{post.title}
-    .post-info #{post.score} points by #{post.poster} #{post.age} | #{post.comments} comments
+    .post-info #{post.score} points by #{post.poster} #{post.age} | #{post.comments.length} comments
+  +comments(post.comments)
+
+mixin comments (list)
   .comment-list
-    .comment
-      .comment-title realusername 1 hour ago [-]
-      .comment-body The VM should be protected against integer overflows and functions should be protected by default, I don't really get those design choices.
-      .comment-tools reply
-      .comment-replies
-        .comment-list
-          .comment
-            .comment-title realusername 1 hour ago [-]
-            .comment-body The VM should be protected against integer overflows and functions should be protected by default, I don't really get those design choices.
-            .comment-tools reply
-            .comment-replies
-          .comment
-            .comment-title realusername 1 hour ago [-]
-            .comment-body The VM should be protected against integer overflows and functions should be protected by default, I don't really get those design choices.
-            .comment-tools reply
-            .comment-replies
-    .comment
-      .comment-title realusername 1 hour ago [-]
-      .comment-body The VM should be protected against integer overflows and functions should be protected by default, I don't really get those design choices.
-      .comment-tools reply
-      .comment-replies
+    each comment in list
+      .comment
+        .comment-title #{comment.author} #{comment.age} [-]
+        .comment-body #{comment.body}
+        .comment-tools reply
+        .comment-replies
+          if comment.replies
+            +comments(comment.replies)
