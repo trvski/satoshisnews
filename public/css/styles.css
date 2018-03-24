@@ -1,0 +1,46 @@
+body {
+  padding: 16px;
+  margin: 0;
+  font-family: Helvetica;
+  font-size: 10pt;
+}
+
+#app {
+  width: 600px;
+  min-height: 600px;
+  background: #ECEFEB;
+  margin: 0 auto;
+}
+
+#header {
+  height: 24px;
+  background: #44583C;
+  line-height: 24px;
+  padding: 0 6px;
+}
+
+#header .login {
+  float: right;
+}
+
+#header a {
+  margin: 0 6px;
+  text-decoration: none;
+  color: white;
+}
+
+#content .post-list {
+  padding: 12px 18px;
+}
+
+#content .post {
+  margin-bottom: 8px;
+}
+
+#content .post-title {
+
+}
+
+#content .post-info {
+  color: #7F7F7F;
+}
