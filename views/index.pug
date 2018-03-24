@@ -4,5 +4,6 @@ block content
   .post-list
     each post in posts
       .post
-        .post-title #{post.position}. #{post.title}
-        .post-info #{post.score} points by #{post.poster} #{post.age} | {#post.comments} comments
+        .post-rank #{post.rank}.
+        .post-title #{post.title}
+        .post-info #{post.score} points by #{post.poster} #{post.age} | #{post.comments} comments
