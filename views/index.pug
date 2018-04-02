@@ -1,11 +1,11 @@
 extends layout.pug
 
 block content
-  .post-list
-    each post in posts
-      .post
-        .post-rank #{post.rank}.
-        .post-title: a(href=post.url) #{post.title}
-        .post-info
-          | #{post.score} points by #{post.poster} #{post.age} |
-          a(href='/post/'+ post.id) #{post.comments.length} comments
+  .story-list
+    each story, index in stories
+      .story
+        .story-rank #{index+1}.
+        .story-title: a(href=story.url) #{story.title}
+        .story-tools
+          | #{story.score} points by #{story.poster} #{story.age} |
+          a(href='/s/'+ story.id) #{story.replies} comments

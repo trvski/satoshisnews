@@ -1,7 +1,7 @@
 'use strict';
 
 const express = require("express");
-const posts = require("./models/posts");
+const post = require("./models/post");
 
 const app = express();
 
@@ -10,18 +10,18 @@ app.set('view engine', 'pug');
 app.use(express.static(__dirname + '/public'));
 
 app.get('/', (request, response) => {
-  posts
-    .getTopPosts()
-    .then(posts => {
-      response.render('index', {posts: posts});
+  post
+    .getTopStories()
+    .then(stories => {
+      response.render('index', {stories: stories});
     });
 });
 
-app.get('/post/:id', (request, response) => {
-  posts
-    .getPost(request.param('id'))
-    .then(post => {
-      response.render('post', {post: post});
+app.get('/s/:id', (request, response) => {
+  post
+    .getStoryAndComments(request.params.id)
+    .then(data => {
+      response.render('story', {story: data.story, comments: data.comments});
     });
 });
 
