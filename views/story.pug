@@ -3,11 +3,11 @@ extends layout.pug
 block content
   .story.no-rank
     .story-title: a(href=story.url) #{story.title}
-    .story-tools #{story.score} points by #{story.poster} #{story.age} | #{story.replies} comments
+    .story-tools #{story.score} points by #{story.poster} #{story.time} | #{story.descendents} comments
   .comment-list
     each comment in comments
       .comment
         .comment-indent(style={width: 20 * (comment.level - 1)})
-        .comment-title #{comment.poster} #{comment.age} [-]
+        .comment-title #{comment.poster} #{comment.time} [-]
         .comment-body #{comment.body}
         .comment-tools reply

@@ -7,5 +7,5 @@ block content
         .story-rank #{index+1}.
         .story-title: a(href=story.url) #{story.title}
         .story-tools
-          | #{story.score} points by #{story.poster} #{story.age} |
-          a(href='/s/'+ story.id) #{story.replies} comments
+          | #{story.score} points by #{story.poster} #{story.time} |
+          a(href='/s/'+ story.id) #{story.descendents} comments
