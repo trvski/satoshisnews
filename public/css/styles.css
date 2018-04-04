@@ -122,3 +122,24 @@ body {
 /* .comment-replies > .comment-list {
   margin-top: 8px;
 } */
+
+.form {
+  display: grid;
+  grid:
+    "label input" /
+    50px 1fr;
+  grid-gap: 4px 8px;
+}
+
+.form-label {
+  text-align: right;
+}
+
+.form-input input[type="text"] {
+  width: 90%;
+}
+
+.form-input textarea {
+  width: 90%;
+  height: 80px;
+}

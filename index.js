@@ -8,6 +8,7 @@ const app = express();
 app.set('view engine', 'pug');
 
 app.use(express.static(__dirname + '/public'));
+app.use(express.urlencoded({extended: true}));
 
 app.get('/', (request, response) => {
   post
@@ -18,14 +19,35 @@ app.get('/', (request, response) => {
 });
 
 app.get('/s/:id', (request, response) => {
+  const id = request.params.id;
+
   post
-    .getStoryAndComments(request.params.id)
+    .getStoryAndComments(id)
     .then(data => {
-      response.render('story', {story: data.story, comments: data.comments});
+      response.render('story', {
+        story: data.story,
+        comments: data.comments
+      });
     });
 });
 
-app.get('/');
+app.get('/submit', (request, response) => {
+  response.render('submit');
+});
+
+app.post('/submit', (request, response) => {
+  post
+    .createPost({
+      title: request.body.title,
+      body: request.body.body,
+      url: request.body.url,
+      poster: "alex"
+    })
+    .then(key => {
+      response.redirect('/s/' + key.id);
+    });
+});
+
 
 exports.http = app;
 

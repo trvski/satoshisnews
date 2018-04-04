@@ -1,14 +1,15 @@
 const Datastore = require('@google-cloud/datastore');
 
+const projectId = 'satoshisnews';
+const datastore = new Datastore();
+
 module.exports = {
   getTopStories: getTopStories,
   getStoryAndComments: getStoryAndComments,
   getAllPosts: getAllPosts,
-  getPost: getPost
+  getPost: getPost,
+  createPost: createPost
 }
-
-const projectId = 'satoshisnews';
-const datastore = new Datastore();
 
 function createPost (data) {
   const key = datastore.key('Post');
@@ -29,19 +30,14 @@ function createPost (data) {
 
   return datastore
     .save(post)
-    .then(() => {
-      console.log(`Saved ${post.key.name}: ${post.data.description}`);
+    .then((results) => {
+      console.log(`Saved ${post.data.title}`);
+      return key;
     })
     .catch(err => {
       console.error('ERROR:', err);
     });
 }
-
-// createPost({
-//   title: "title",
-//   url: "http://www.asdasd.com/a",
-//   poster: "username"
-// })
 
 function getTopStories () {
   const query = datastore
@@ -50,9 +46,7 @@ function getTopStories () {
 
   return datastore
     .runQuery(query)
-    .then(results => {
-      return results[0];
-    })
+    .then(preparePosts)
     .catch(err => {
       console.error('ERROR:', err);
     });
@@ -61,45 +55,70 @@ function getTopStories () {
 function getStoryAndComments (id) {
   const query = datastore
     .createQuery('Post')
-    .filter('__key__', '>=', datastore.key(['Post', parseInt(id)]));
+    .hasAncestor(datastore.key(['Post', parseInt(id)]))
+    .order('__key__');
+
+    return datastore
+      .runQuery(query)
+      .then(preparePosts)
+      .then(([story, ...comments] = posts) => {
+        return {
+          story: story,
+          comments: comments
+        }
+      })
+      .catch(err => {
+        console.error('ERROR:', err);
+      });
+}
+
+function getAllPosts () {
+  const query = datastore
+    .createQuery('Post');
 
   return datastore
     .runQuery(query)
-    .then(results => {
-      return {
-        story: results[0].shift(),
-        comments: results[0]
-      }
-    })
+    .then(preparePosts)
     .catch(err => {
       console.error('ERROR:', err);
     });
 }
 
-function getAllPosts () {
-  const query = datastore
-    .createQuery('Post')
-    .order('created');
-
-  return datastore
-    .runQuery(query)
-    .then(results => {
-      return results[0];
-    })
-    .catch(err => {
-      console.error('ERROR:', err);
-    });
+function getStory (id) {
+  return getPost(id);
 }
 
 function getPost (id) {
   const key = datastore.key(['Post', parseInt(id)]);
 
-  datastore
+  return datastore
     .get(key)
-    .then(post => {
-      return post;
-    })
+    .then(([post] = result) => post)
+    .then(preparePost)
     .catch(err => {
       console.error('ERROR:', err);
     });
+}
+
+function preparePosts (results) {
+  if (!results[0]) {
+    return [];
+  }
+
+  return results[0].map(preparePost)
+}
+
+function preparePost (object) {
+  return {
+    id: object[datastore.KEY].id,
+    title: object.title,
+    body: object.body,
+    level: object.level,
+    url: object.url,
+    score: object.score,
+    poster: object.poster,
+    time: object.time,
+    descendents: object.descendents,
+    children: object.children
+  }
 }

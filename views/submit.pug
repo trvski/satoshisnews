@@ -1,0 +1,12 @@
+extends layout.pug
+
+block content
+  form.form(method='post')
+    .form-label title
+    .form-input: input(type='text', name='title')
+    .form-label url
+    .form-input: input(type='text', name='url')
+    .form-label body
+    .form-input: textarea(name='body')
+    .form-label
+    .form-input: input.submit-button(type='submit', value='Submit')
