@@ -4,6 +4,10 @@ block content
   .story.no-rank
     .story-title: a(href=story.url) #{story.title}
     .story-tools #{story.score} points by #{story.poster} #{story.time} | #{story.descendents} comments
+  form(method='post', action='/s/'+story.id+'/comment')
+    input(type='hidden', name='parentId', value=story.id)
+    textarea(name='body')
+    input(type='submit', value='Submit')
   .comment-list
     each comment in comments
       .comment

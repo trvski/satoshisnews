@@ -31,6 +31,23 @@ app.get('/s/:id', (request, response) => {
     });
 });
 
+app.post('/s/:id/comment', (request, response) => {
+  const storyId = request.params.id;
+  const parentId = request.body.parentId;
+  const data = {
+    body: request.body.body,
+    poster: 'alex'
+  };
+
+  post
+    .getPost(parentId)
+    .then(parent => post.createComment(parent, data))
+    .then(key => {
+      console.log('test')
+      response.redirect('/s/' + storyId);
+    });
+});
+
 app.get('/submit', (request, response) => {
   response.render('submit');
 });
