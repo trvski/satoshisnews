@@ -49,12 +49,8 @@ app.post('/submit', (request, response) => {
 });
 
 
-exports.http = app;
-
-exports.event = (event, callback) => {
-  callback();
-};
-
-if (!process.env.GCLOUD_PROJECT) {
-  app.listen(8080)
-}
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`App listening on port ${PORT}`);
+  console.log('Press Ctrl+C to quit.');
+});
