@@ -5,7 +5,7 @@ block content
     .story-title: a(href=story.url) #{story.title}
     .story-tools #{story.score} points by #{story.poster} #{story.time} | #{story.descendents} comments
   form(method='post', action='/s/'+story.id+'/comment')
-    input(type='hidden', name='parentId', value=story.id)
+    input(type='hidden', name='path', value=story.path)
     textarea(name='body')
     input(type='submit', value='Submit')
   .comment-list

@@ -1,161 +1,104 @@
-const Datastore = require('@google-cloud/datastore');
+const gstore = require('gstore-node')();
 
-const projectId = 'satoshisnews';
-const datastore = new Datastore();
+const { Schema } = gstore;
+
+const schema = new Schema({
+  level: { type: 'int', required: true },
+  descendents: { type: 'int', default: 0, required: true },
+  createdOn: { type: 'datetime', default: gstore.defaultValues.NOW },
+  modifiedOn: { type: 'datetime' },
+  poster: { type: 'string', required: true },
+  title: { type: 'string', default: null },
+  body: { type: 'string', default: null },
+  url: { type: 'string', default: null  },
+  score: { type: 'int', default: 0, required: true },
+}, {
+  queries: {
+    format: 'ENTITY'
+  }
+});
+
+schema.virtual('path').get(function getPath () {
+  return this[gstore.ds.KEY].path
+    .filter(e => e != 'Post')
+    .join('/');
+});
+
+schema.pre('save', function updateAncestors () {
+  const ancestorKeys = (function parentKeys (key) {
+    if (!key.parent) return [];
+
+    return [key.parent.path].concat(parentKeys(key.parent));
+  })(this.entityKey);
+
+  return Promise.all(ancestorKeys.map(key => {
+    return this.model('Post')
+      .get(key)
+      .then(([post] = posts) => {
+        post.descendents++;
+        return post.save();
+      });
+  }));
+});
+
+const Post = gstore.model('Post', schema);
 
 module.exports = {
-  getTopStories: getTopStories,
-  getStoryAndComments: getStoryAndComments,
-  getAllPosts: getAllPosts,
-  getPost: getPost,
-  createPost: createPost,
-  createComment: createComment
-}
+  getTopStories: () => {
+    const query = Post.query()
+      .filter('level', '=', 0)
+      // .order('createdOn', { descending: true })
+      .limit(25);
 
-function createPost (data) {
-  const key = datastore.key('Post');
-  const post = {
-    key: key,
-    data: {
-      title: data.title || "",
-      body: data.body || "",
-      level: data.level || 0,
-      url: data.url || "",
-      score: data.score || 0,
-      poster: data.poster,
-      time: Date.now(),
-      descendents: 0,
-      children: 0
-    }
-  };
-
-  return datastore
-    .save(post)
-    .then((results) => {
-      console.log(`Saved ${post.data.title}`);
-      return key;
-    })
-    .catch(err => {
-      console.error('ERROR:', err);
+    return query.run().then((response) => {
+      const stories = response.entities.map(post => post.plain({virtuals: true}));
+      return { stories: stories };
     });
-}
+  },
 
-function createComment (parent, data) {
-  if (!parent) {
-    throw new Error('parent must be defined.');
-  }
+  getStoryAndComments: (storyId) => {
+    const query = Post.query()
+      .hasAncestor(Post.key(storyId))
+      // .order('createdOn', { descending: true });
 
-  ['body', 'poster'].forEach(property => {
-    if (!data[property]) {
-      throw new Error(`${property} must be defined.`);
-    }
-  })
-
-  const parentKey = parseInt(parent.id);
-  const commentKey = datastore.key(['Post', parentKey, 'Post']);
-  const comment = {
-    body: data.body,
-    poster: data.poster,
-    level: parent.level + 1,
-    time: Date.now(),
-    title: null,
-    url: null,
-    score: 0,
-    descendents: 0,
-    children: 0
-  }
-
-  return datastore
-    .save({
-      key: commentKey,
-      data: comment
-    })
-    .catch(err => {
-      console.error('ERROR:', err);
+    return query.run().then((response) => {
+      const posts = response.entities.map(post => post.plain({virtuals: true}));
+      const [story, ...comments] = posts;
+console.log(response.entities)
+      return {
+        story: story,
+        comments: comments
+      };
     });
-}
+  },
 
-function getTopStories () {
-  const query = datastore
-    .createQuery('Post')
-    .filter('level', '=', 0);
+  createStory: (data) => {
+    const post = new Post(Post.sanitize(data));
 
-  return datastore
-    .runQuery(query)
-    .then(preparePosts)
-    .catch(err => {
-      console.error('ERROR:', err);
-    });
-}
+    post.level = 0;
 
-function getStoryAndComments (id) {
-  const query = datastore
-    .createQuery('Post')
-    .hasAncestor(datastore.key(['Post', parseInt(id)]))
-    .order('__key__');
-
-    return datastore
-      .runQuery(query)
-      .then(preparePosts)
-      .then(([story, ...comments] = posts) => {
-        console.log(comments);
-        return {
-          story: story,
-          comments: comments
-        }
-      })
+    return post
+      .save()
+      .then(post => post.plain({virtuals: true}))
       .catch(err => {
-        console.error('ERROR:', err);
+        console.error(err);
       });
-}
+  },
 
-function getAllPosts () {
-  const query = datastore
-    .createQuery('Post');
+  createComment: (data) => {
+    const path = data.path
+      .split('/')
+      .reduce((arr, el) => arr.concat(['Post', parseInt(el)]), []);
 
-  return datastore
-    .runQuery(query)
-    .then(preparePosts)
-    .catch(err => {
-      console.error('ERROR:', err);
-    });
-}
+    const post = new Post(Post.sanitize(data), null, path);
 
-function getStory (id) {
-  return getPost(id);
-}
+    post.level = path.length / 2;
 
-function getPost (id) {
-  const key = datastore.key(['Post', parseInt(id)]);
-
-  return datastore
-    .get(key)
-    .then(([post] = result) => post)
-    .then(preparePost)
-    .catch(err => {
-      console.error('ERROR:', err);
-    });
-}
-
-function preparePosts (results) {
-  if (!results[0]) {
-    return [];
-  }
-
-  return results[0].map(preparePost)
-}
-
-function preparePost (object) {
-  return {
-    id: object[datastore.KEY].id,
-    title: object.title,
-    body: object.body,
-    level: object.level,
-    url: object.url,
-    score: object.score,
-    poster: object.poster,
-    time: object.time,
-    descendents: object.descendents,
-    children: object.children
+    return post
+      .save()
+      .then(post => post.plain({virtuals: true}))
+      .catch(err => {
+        console.error(err);
+      });
   }
 }

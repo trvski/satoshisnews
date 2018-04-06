@@ -1,8 +1,12 @@
 'use strict';
 
-const express = require("express");
-const post = require("./models/post");
+const Datastore = require('@google-cloud/datastore');
+const Post = require("./models/post");
 
+const gstore = require('gstore-node')();
+gstore.connect(new Datastore());
+
+const express = require("express");
 const app = express();
 
 app.set('view engine', 'pug');
@@ -11,39 +15,34 @@ app.use(express.static(__dirname + '/public'));
 app.use(express.urlencoded({extended: true}));
 
 app.get('/', (request, response) => {
-  post
+  Post
     .getTopStories()
-    .then(stories => {
-      response.render('index', {stories: stories});
+    .then(results => {
+      response.render('index', results);
     });
 });
 
-app.get('/s/:id', (request, response) => {
-  const id = request.params.id;
+app.get('/s/:storyId', (request, response) => {
+  const { storyId } = request.params;
 
-  post
-    .getStoryAndComments(id)
-    .then(data => {
-      response.render('story', {
-        story: data.story,
-        comments: data.comments
-      });
+  Post
+    .getStoryAndComments(storyId)
+    .then(results => {
+      response.render('story', results);
     });
 });
 
-app.post('/s/:id/comment', (request, response) => {
-  const storyId = request.params.id;
-  const parentId = request.body.parentId;
-  const data = {
-    body: request.body.body,
-    poster: 'alex'
-  };
+app.post('/s/:storyId/comment', (request, response) => {
+  const { storyId } = request.params;
+  const { body, path } = request.body;
 
-  post
-    .getPost(parentId)
-    .then(parent => post.createComment(parent, data))
-    .then(key => {
-      console.log('test')
+  Post
+    .createComment({
+        body: body,
+        poster: 'alex',
+        path: path
+      })
+    .then(comment => {
       response.redirect('/s/' + storyId);
     });
 });
@@ -53,15 +52,17 @@ app.get('/submit', (request, response) => {
 });
 
 app.post('/submit', (request, response) => {
-  post
-    .createPost({
-      title: request.body.title,
-      body: request.body.body,
-      url: request.body.url,
+  const { title, body, url } = request.body;
+
+  Post
+    .createStory({
+      title: title,
+      body: body,
+      url: url,
       poster: "alex"
     })
-    .then(key => {
-      response.redirect('/s/' + key.id);
+    .then(story => {
+      response.redirect('/s/' + story.id);
     });
 });
 
