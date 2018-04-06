@@ -1,11 +1,12 @@
 extends layout.pug
 
 block content
+  a(name='reply')
   .story.no-rank
     .story-title: a(href=story.url) #{story.title}
     .story-tools #{story.score} points by #{story.poster} #{story.time} | #{story.descendents} comments
   form(method='post', action='/s/'+story.id+'/comment')
-    input(type='hidden', name='path', value=story.path)
+    input(id='post-path', type='hidden', name='path', value=story.path)
     textarea(name='body')
     input(type='submit', value='Submit')
   .comment-list
@@ -14,4 +15,8 @@ block content
         .comment-indent(style={width: 20 * (comment.level - 1)})
         .comment-title #{comment.poster} #{comment.time} [-]
         .comment-body #{comment.body}
-        .comment-tools reply
+        .comment-tools: a.comment-reply(href='#reply', onclick=`setPath('${comment.path}')`) reply
+  script.
+    function setPath (path) {
+      document.getElementById('post-path').value = path;
+    }
